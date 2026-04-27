@@ -1,0 +1,46 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+
+# ── Environment variables (secrets) ───────────────────────────────────────────
+.env
+!.env.example
+
+# ── ChromaDB local persistence ────────────────────────────────────────────────
+chroma_db/
+
+# ── Node / React ──────────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/build/
+frontend/.env
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+ingest_log.txt
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/

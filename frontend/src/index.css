@@ -1,0 +1,38 @@
+/* ReportMaster AI — Global Styles */
+
+/* Tailwind CSS directives — must be first */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Custom Base Styles ─────────────────────────────────────────────────────── */
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+      Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  }
+}
+
+/* ── Custom Component Utilities ─────────────────────────────────────────────── */
+
+@layer components {
+  /* Reusable card surface */
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  }
+
+  /* Skeleton pulse bar */
+  .skeleton-bar {
+    @apply h-4 rounded-md bg-slate-200 animate-pulse;
+  }
+}
