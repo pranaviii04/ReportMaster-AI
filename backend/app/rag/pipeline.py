@@ -37,7 +37,7 @@ from __future__ import annotations
 import logging
 import textwrap
 
-import openai
+from langchain_google_genai import ChatGoogleGenerativeAI
 from fastapi import HTTPException
 
 from app.core.config import settings
@@ -47,43 +47,51 @@ from app.rag.vectorstore import vector_store
 logger = logging.getLogger("reportmaster.pipeline")
 
 # Sentinel value that ships in .env.example — signals demo mode
-_DEMO_KEY_SENTINEL = "your_openai_key_here"
+_DEMO_KEY_SENTINEL = "your_google_key_here"
 
 
 def _is_demo_mode() -> bool:
     """
-    Return True when no real OpenAI API key has been configured.
-
-    Detects the placeholder string that ships in .env.example so that
-    the pipeline degrades gracefully instead of crashing on startup or
-    returning a cryptic OpenAI AuthenticationError on the first request.
+    Return True when no real Google API key has been configured.
     """
-    key = (settings.OPENAI_API_KEY or "").strip()
+    key = (settings.GOOGLE_API_KEY or "").strip()
     return not key or key == _DEMO_KEY_SENTINEL
 
 # ── Prompt Templates ──────────────────────────────────────────────────────────
 
-SYSTEM_PROMPT = """You are ReportMaster AI, an expert assistant for financial reporting standards and accounting procedures.
+SYSTEM_PROMPT = """You are ReportMaster AI, an expert assistant for internal financial reporting standards and accounting procedures.
 
-You ONLY answer questions based on the retrieved context below.
-If the answer is not contained in the context, respond exactly with:
-"This information is not available in the current financial reporting manuals."
+STRICT GROUNDING RULES:
+1. Use ONLY the provided context to answer questions. 
+2. If the answer is not explicitly found in the context, you MUST respond exactly with: 
+   "This information is not available in the current financial reporting manuals."
+3. Do NOT use your general training data to answer. Do NOT guess or extrapolate.
+4. If the context contains conflicting information, state that the manual has conflicting sections.
+5. Always provide professional, clear, and concise answers suitable for an accounting department.
 
-Always cite the source document and section in your answer.
-Keep answers concise, accurate, and professional — suitable for a certified accountant.
-Do not speculate, infer, or use knowledge outside the provided context."""
+CITATION RULES:
+- Every factual claim MUST be followed by a citation.
+- Each context chunk starts with a bracketed header like `[Document: Name | Page: X]`. Use this information for precise citations.
+- Format citations at the end of sentences or paragraphs using: [Source: <doc_title>, Page <page_number>].
+- If you quote or reference information from multiple pages, cite all of them.
+- Ensure the citation matches the document/page exactly as provided in the chunk header.
 
-USER_PROMPT_TEMPLATE = """Context retrieved from financial reporting manuals:
+FORMATTING RULES:
+1. Avoid using excessive markdown bolding (**text**). Use it only for critical terms or headers.
+2. Use bullet points for lists to improve readability.
+3. Keep paragraphs short and professional.
+4. Do NOT use special characters or emojis unless requested.
+5. If the answer is long, use simple, clear headings."""
 
+USER_PROMPT_TEMPLATE = """INTERNAL MANUALS CONTEXT:
+---
 {context}
-
 ---
 
-Question from accounting team member:
+ACCOUNTING TEAM QUESTION:
 {question}
 
-Provide a clear, grounded answer with explicit citations to the manual sections above.
-Format citations as: [Source: <doc_title>, Section <chunk_index>]"""
+Instructions: Provide a grounded answer based ONLY on the manuals above. Include specific citations for every point."""
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -106,7 +114,13 @@ def build_context(sources: list[SourceDocument]) -> str:
     """
     lines: list[str] = []
     for i, doc in enumerate(sources):
-        lines.append(f"[{i + 1}] Source: {doc.doc_title} | Section {doc.chunk_index}")
+        meta = f"Source: {doc.doc_title}"
+        if doc.page_number:
+            meta += f" | Page {doc.page_number}"
+        else:
+            meta += f" | Section {doc.chunk_index}"
+        
+        lines.append(f"[{i + 1}] {meta}")
         lines.append(f"    {doc.content}")
         lines.append("")  # blank separator between chunks
     return "\n".join(lines)
@@ -138,7 +152,7 @@ def _build_demo_answer(question: str, sources: list[SourceDocument]) -> str:
         QueryResponse.answer field.
     """
     notice = (
-        "[Demo Mode — set OPENAI_API_KEY in backend/.env to enable GPT-4o-mini synthesis]\n\n"
+        "[Demo Mode — set GOOGLE_API_KEY in backend/.env to enable Gemini synthesis]\n\n"
     )
 
     # Primary answer: top chunk (highest cosine similarity)
@@ -192,30 +206,32 @@ class RAGPipeline:
         Initialize the RAG pipeline for financial reporting manual retrieval.
 
         Loads the shared VectorStore singleton (already connected to ChromaDB)
-        and creates an async OpenAI client so both are ready before the first
-        query arrives — eliminating cold-start latency on the initial request.
+        and creates a Gemini client so both are ready before the first
+        query arrives.
 
-        If OPENAI_API_KEY is not set (or still the .env.example placeholder),
-        the pipeline starts in Demo Mode: all retrieval works at full fidelity
-        and answers are synthesised from retrieved chunks without calling OpenAI.
-        Set a real API key in backend/.env to enable GPT-4o-mini synthesis.
+        If GOOGLE_API_KEY is not set (or still the .env.example placeholder),
+        the pipeline starts in Demo Mode.
         """
         self.vector_store = vector_store
-        self.model = "gpt-4o-mini"
+        self.model = "gemini-1.5-flash"
         self.demo_mode = _is_demo_mode()
 
         if self.demo_mode:
-            self.client = None
+            self.llm = None
             logger.warning(
                 "RAGPipeline starting in DEMO MODE — "
-                "no OPENAI_API_KEY configured. "
+                "no GOOGLE_API_KEY configured. "
                 "Set a real key in backend/.env to enable LLM synthesis."
             )
-            print("RAGPipeline initialized. [DEMO MODE — no OpenAI key]")
+            print("RAGPipeline initialized. [DEMO MODE — no Google key]")
         else:
-            self.client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-            logger.info("RAGPipeline initialised. LLM model: %s", self.model)
-            print(f"RAGPipeline initialized. [LLM: {self.model}]")
+            self.llm = ChatGoogleGenerativeAI(
+                model="gemini-flash-latest",
+                google_api_key=settings.GOOGLE_API_KEY,
+                temperature=0.1,
+            )
+            logger.info("RAGPipeline initialised. LLM model: %s", "gemini-1.5-flash-latest")
+            print(f"RAGPipeline initialized. [LLM: gemini-1.5-flash-latest]")
 
     # ── Core query method ─────────────────────────────────────────────────────
 
@@ -281,36 +297,25 @@ class RAGPipeline:
             },
         ]
 
-        # ── Step 4: Call OpenAI  (or Demo Mode synthesis) ────────────────────
+        # ── Step 4: Call LLM  (or Demo Mode synthesis) ───────────────────────
         if self.demo_mode:
             # ── Demo Mode: synthesise answer from retrieved chunks ─────────────
-            # No external API call — answer is built deterministically from the
-            # top-k ChromaDB results.  Identical response shape to LLM mode.
             logger.info("Demo Mode: synthesising answer from %d chunks.", len(sources))
             answer = _build_demo_answer(question, sources)
         else:
-            # ── LLM Mode: call OpenAI GPT-4o-mini ─────────────────────────────
+            # ── LLM Mode: call Google Gemini ─────────────────────────────
             try:
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    max_tokens=1000,
-                    temperature=0.1,  # low temperature → consistent, factual answers
-                )
-                answer = response.choices[0].message.content.strip()
+                response = await self.llm.ainvoke(messages)
+                content = response.content
+                if isinstance(content, list):
+                    # Handle multi-part content if returned
+                    answer = "".join([str(c.get("text", "")) if isinstance(c, dict) else str(c) for c in content]).strip()
+                else:
+                    answer = str(content).strip()
                 logger.debug("LLM response received (%d chars).", len(answer))
 
-            except openai.AuthenticationError as exc:
-                logger.error("OpenAI authentication failed: %s", exc)
-                raise HTTPException(
-                    status_code=502,
-                    detail=(
-                        "LLM error: Invalid OpenAI API key. "
-                        "Check OPENAI_API_KEY in backend/.env."
-                    ),
-                ) from exc
-            except openai.OpenAIError as exc:
-                logger.error("OpenAI API error: %s", exc)
+            except Exception as exc:
+                logger.error("LLM API error: %s", exc)
                 raise HTTPException(
                     status_code=502,
                     detail=f"LLM error: {str(exc)}",

@@ -28,6 +28,7 @@ class SourceDocument(BaseModel):
     content: str = Field(..., description="Raw text content of the retrieved chunk.")
     doc_title: str = Field(..., description="Human-readable title of the source document.")
     chunk_index: int = Field(..., description="Zero-based index of this chunk within its parent document.")
+    page_number: int | None = Field(None, description="The page number from the source document (if available).")
     score: float = Field(..., description="Cosine similarity score (0.0 – 1.0) for this chunk.")
 
 

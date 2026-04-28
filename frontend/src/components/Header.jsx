@@ -10,52 +10,56 @@ import React from "react";
 
 function Header() {
   return (
-    <header className="h-14 flex-shrink-0 flex items-center justify-between px-6 bg-white border-b border-[#E2E8F0]">
+    <header className="h-16 flex-shrink-0 sticky top-0 z-50 flex items-center justify-between px-8 bg-[#0F172A] border-b border-white/5 shadow-lg">
       {/* ── Left: Brand ──────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-3">
         {/* Document icon */}
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#2563EB"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-          <path d="M14 2v6h6" />
-          <path d="M16 13H8" />
-          <path d="M16 17H8" />
-          <path d="M10 9H8" />
-        </svg>
+        <div className="p-2 bg-blue-50 rounded-lg">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#2563EB"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+            <path d="M14 2v6h6" />
+            <path d="M16 13H8" />
+            <path d="M16 17H8" />
+            <path d="M10 9H8" />
+          </svg>
+        </div>
 
-        <span className="text-base font-semibold text-[#1A202C]">
-          ReportMaster AI
-        </span>
-
-        <span className="text-[#CBD5E0] select-none">·</span>
-
-        <span className="text-[13px] text-[#718096]">
-          Financial Reporting Assistant
-        </span>
+        <div className="flex flex-col -space-y-0.5">
+          <span className="text-sm font-extrabold text-white tracking-tight">
+            ReportMaster AI
+          </span>
+          <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">
+            PRO EDITION
+          </span>
+        </div>
       </div>
 
       {/* ── Right: Status ────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#16A34A]" />
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
           </span>
-          <span className="text-xs font-medium text-[#16A34A]">Live</span>
+          <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Live</span>
         </div>
 
-        <span className="text-[#E2E8F0] select-none">|</span>
-
-        <span className="text-xs text-[#718096]">Powered by GPT-4o-mini</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-medium text-slate-500">Powered by</span>
+          <div className="px-2 py-0.5 bg-white/5 rounded-md border border-white/10">
+            <span className="text-[11px] font-bold text-slate-300">Google Gemini</span>
+          </div>
+        </div>
       </div>
     </header>
   );

@@ -13,7 +13,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Header from "./components/Header";
 import ChatInterface from "./components/ChatInterface";
 import QueryHistory from "./components/QueryHistory";
-import { queryFinancialManual, getStats } from "./services/api";
+import { queryFinancialManual, getStats, uploadManual } from "./services/api";
 
 function App() {
   /* ── State ────────────────────────────────────────────────────────────────── */
@@ -128,10 +128,37 @@ function App() {
     setHistory([]);
   }, []);
 
+  /** Upload a PDF manual and refresh stats. */
+  const handleUpload = useCallback(async (file) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await uploadManual(file);
+      // Refresh stats after successful upload and indexing
+      const newStats = await getStats();
+      setStats(newStats);
+      
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: "assistant",
+          content: data.message,
+          sources: [],
+          timestamp: new Date(),
+        },
+      ]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   /* ── Render ───────────────────────────────────────────────────────────────── */
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-white">
+    <div className="flex flex-col h-screen overflow-hidden bg-slate-50">
       {/* Fixed top bar */}
       <Header />
 
@@ -141,6 +168,7 @@ function App() {
           history={history}
           onSelect={handleHistoryClick}
           onClear={clearHistory}
+          onUpload={handleUpload}
           stats={stats}
         />
         <ChatInterface

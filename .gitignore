@@ -44,3 +44,6 @@ ingest_log.txt
 .pytest_cache/
 .coverage
 htmlcov/
+backend/data/
+backend/query_output.json
+backend/scripts/create_dummy_pdf.py

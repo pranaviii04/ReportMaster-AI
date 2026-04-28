@@ -15,8 +15,8 @@ import axios from "axios";
 // ── Axios Instance ─────────────────────────────────────────────────────────────
 
 const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:8000",
-  timeout: 30000,
+  baseURL: process.env.REACT_APP_API_URL || "http://127.0.0.1:8000",
+  timeout: 300000, // 5 minutes for long RAG queries
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -24,9 +24,6 @@ const apiClient = axios.create({
 });
 
 // ── Response Interceptor ───────────────────────────────────────────────────────
-// Extracts the human-readable error detail from FastAPI's JSON error responses
-// and converts network-level failures into a user-friendly message.
-
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -34,10 +31,15 @@ apiClient.interceptors.response.use(
       const detail =
         error.response.data?.detail ||
         error.response.data?.message ||
-        "Server error";
+        `Server error (${error.response.status})`;
       throw new Error(detail);
     }
-    throw new Error("Network error — is the backend running?");
+    
+    if (error.code === "ECONNABORTED") {
+      throw new Error("Request timed out — the RAG pipeline is taking a long time. Please wait a moment.");
+    }
+
+    throw new Error("Network error — ensure the backend is running at http://127.0.0.1:8000");
   }
 );
 
@@ -87,6 +89,25 @@ export const getStats = async () => {
  */
 export const triggerIngest = async () => {
   const response = await apiClient.post("/api/ingest");
+  return response.data;
+};
+
+/**
+ * Upload a PDF manual and trigger indexing.
+ *
+ * POST /api/upload
+ * @param {File} file — PDF file object.
+ * @returns {Promise<{message: string, documents_indexed: number}>}
+ */
+export const uploadManual = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  
+  const response = await apiClient.post("/api/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
   return response.data;
 };
 

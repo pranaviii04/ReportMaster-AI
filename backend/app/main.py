@@ -10,7 +10,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers.query import router
+from app.routers.query import router as query_router
+from app.routers.upload import router as upload_router
 
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────
@@ -35,7 +36,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     print("ReportMaster AI starting up...")
 
-    # Import triggers singleton instantiation: EmbeddingModel + VectorStore + OpenAI client
+    # Import triggers singleton instantiation: EmbeddingModel + VectorStore + Gemini client
     from app.rag.pipeline import rag_pipeline  # noqa: PLC0415
 
     status = rag_pipeline.get_pipeline_status()
@@ -82,7 +83,8 @@ app.add_middleware(
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 
-app.include_router(router)  # prefix="" — routes are mounted at their declared paths
+app.include_router(query_router)
+app.include_router(upload_router)
 
 
 # ── Root Route ────────────────────────────────────────────────────────────────

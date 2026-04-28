@@ -3,14 +3,15 @@ ReportMaster AI — Application Configuration
 Loads all settings from the .env file using Pydantic v2 BaseSettings.
 """
 
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Central configuration object populated from environment variables / .env file."""
 
-    # ── LLM / OpenAI ────────────────────────────────────────────────────────
-    OPENAI_API_KEY: str = "your_openai_key_here"
+    # ── LLM / Google Gemini ──────────────────────────────────────────────────
+    GOOGLE_API_KEY: str = "your_google_key_here"
 
     # ── ChromaDB ─────────────────────────────────────────────────────────────
     CHROMA_PERSIST_DIR: str = "./chroma_db"
@@ -26,8 +27,12 @@ class Settings(BaseSettings):
     CHUNK_SIZE: int = 500
     CHUNK_OVERLAP: int = 50
 
+    # ── RAG — Data Sources ───────────────────────────────────────────────────
+    # Local directory where internal PDF manuals are stored
+    MANUALS_DIR: str = str(Path(__file__).parent.parent.parent / "data" / "manuals")
+
     # ── CORS ─────────────────────────────────────────────────────────────────
-    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: list[str] = ["*"]
 
     model_config = SettingsConfigDict(
         env_file=".env",

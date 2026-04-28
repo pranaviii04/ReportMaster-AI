@@ -159,6 +159,7 @@ class VectorStore:
                     content=doc,
                     doc_title=meta.get("doc_title", "Unknown"),
                     chunk_index=int(meta.get("chunk_index", 0)),
+                    page_number=int(meta.get("page_number")) if meta.get("page_number") else None,
                     score=similarity,
                 )
             )

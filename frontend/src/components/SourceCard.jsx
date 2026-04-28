@@ -17,7 +17,7 @@
 
 import React, { useState } from "react";
 
-function SourceCard({ doc_title, content, score, index }) {
+function SourceCard({ doc_title, content, score, index, page_number }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const preview =
@@ -33,7 +33,7 @@ function SourceCard({ doc_title, content, score, index }) {
             Source {index}
           </span>
           <span className="text-xs font-medium text-[#1A202C] ml-2 truncate max-w-[200px]">
-            {doc_title}
+            {doc_title} {page_number && `(Page ${page_number})`}
           </span>
         </div>
 

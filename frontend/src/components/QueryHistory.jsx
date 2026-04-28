@@ -15,7 +15,7 @@
  * @param {Object|null} props.stats — { total_documents, collection_name } or null.
  */
 
-import React from "react";
+import React, { useRef } from "react";
 
 /* ── Timestamp formatter ────────────────────────────────────────────────────── */
 
@@ -31,93 +31,115 @@ function formatTimestamp(date) {
 
 /* ── Component ──────────────────────────────────────────────────────────────── */
 
-function QueryHistory({ history, onSelect, onClear, stats }) {
+function QueryHistory({ history, onSelect, onClear, onUpload, stats }) {
+  const fileInputRef = useRef(null);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file && onUpload) {
+      onUpload(file);
+    }
+    // Reset input so the same file can be selected again if needed
+    e.target.value = "";
+  };
   /* Show most-recent first */
   const reversed = [...history].reverse();
 
   return (
-    <aside className="w-[260px] flex-shrink-0 bg-[#F1F3F5] border-r border-[#E2E8F0] flex flex-col h-full">
+    <aside className="w-[280px] flex-shrink-0 bg-[#0F172A] flex flex-col h-full border-r border-white/5">
       {/* ── Top: history list ────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-4 custom-scrollbar">
         {/* Header row */}
-        <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold text-[#718096] uppercase tracking-wider">
+        <div className="pt-8 pb-4 flex items-center justify-between">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
             History
           </span>
           {history.length > 0 && (
             <button
               type="button"
               onClick={onClear}
-              className="text-[10px] text-[#718096] hover:text-[#DC2626] transition-colors"
+              className="text-[10px] text-slate-500 hover:text-red-400 transition-colors"
             >
-              Clear all
+              Clear
             </button>
           )}
         </div>
 
         {/* Empty state */}
         {history.length === 0 && (
-          <p className="text-xs text-[#A0AEC0] px-4 py-6 text-center">
-            No queries yet. Ask a question to get started.
-          </p>
+          <div className="px-4 py-8 text-center">
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Your query history will appear here.
+            </p>
+          </div>
         )}
 
         {/* History items */}
-        {reversed.map((entry) => (
-          <button
-            key={entry.id}
-            type="button"
-            onClick={() => onSelect(entry.question)}
-            className="w-full text-left px-4 py-2.5 hover:bg-white hover:shadow-sm rounded-lg mx-1 transition-all group"
-            style={{ maxWidth: "calc(100% - 8px)" }}
-          >
-            <span className="text-xs text-[#1A202C] line-clamp-2 leading-relaxed group-hover:text-[#2563EB] transition-colors">
-              {entry.question}
-            </span>
-            <span className="text-[10px] text-[#A0AEC0] mt-0.5 block">
-              {formatTimestamp(entry.timestamp)}
-            </span>
-          </button>
-        ))}
+        <div className="space-y-1 pb-8">
+          {reversed.map((entry) => (
+            <button
+              key={entry.id}
+              type="button"
+              onClick={() => onSelect(entry.question)}
+              className="w-full text-left px-3 py-4 hover:bg-white/[0.03] rounded-xl transition-all group border border-transparent hover:border-white/5"
+            >
+              <span className="text-xs text-slate-300 line-clamp-2 leading-relaxed group-hover:text-blue-400 transition-colors">
+                {entry.question}
+              </span>
+              <span className="text-[9px] text-slate-600 mt-2 block font-bold uppercase tracking-wider">
+                {formatTimestamp(entry.timestamp)}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Bottom: KB status card ───────────────────────────────────────── */}
-      <div className="border-t border-[#E2E8F0] p-4">
-        <div className="bg-white border border-[#E2E8F0] rounded-lg p-3">
+      <div className="p-4 bg-[#0F172A] border-t border-white/5">
+        <div className="bg-gradient-to-b from-slate-800/40 to-slate-900/40 border border-white/5 rounded-2xl p-5">
           {stats === null && (
-            <span className="text-[10px] text-[#A0AEC0]">
-              Checking knowledge base...
-            </span>
-          )}
-
-          {stats !== null && stats.total_documents > 0 && (
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] inline-block" />
-                <span className="text-[10px] text-[#16A34A] font-medium">
-                  Knowledge base active
-                </span>
-              </div>
-              <p className="text-[10px] text-[#718096]">
-                {stats.total_documents.toLocaleString()} chunks indexed
-              </p>
-              <p className="text-[10px] text-[#A0AEC0]">
-                Collection: {stats.collection_name}
-              </p>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-slate-600 animate-pulse" />
+              <span className="text-[11px] text-slate-400">
+                Checking status...
+              </span>
             </div>
           )}
 
-          {stats !== null && stats.total_documents === 0 && (
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
-                <span className="text-[10px] text-amber-600 font-medium">
-                  Knowledge base empty
-                </span>
+          {stats !== null && (
+            <div className="space-y-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`w-2 h-2 rounded-full ${stats.total_documents > 0 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500'} `} />
+                  <span className={`text-[11px] font-bold ${stats.total_documents > 0 ? 'text-emerald-400' : 'text-amber-400'} uppercase tracking-wider`}>
+                    {stats.total_documents > 0 ? 'KB Synced' : 'KB Empty'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-tight">
+                  {stats.total_documents.toLocaleString()} semantic chunks
+                </p>
               </div>
-              <p className="text-[10px] text-[#718096]">
-                Run ingestion script to index manuals
-              </p>
+              
+              <div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept=".pdf"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={handleUploadClick}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[11px] font-bold py-2.5 rounded-lg hover:shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  Upload Manual (PDF)
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -2,7 +2,7 @@
 ReportMaster AI — API Router (Phase 3)
 
 Live FastAPI routes replacing the Phase 1 stubs.  All four endpoints are now
-wired to the RAGPipeline singleton and return real data from ChromaDB and OpenAI.
+wired to the RAGPipeline singleton and return real data from ChromaDB and Gemini.
 
 Route summary:
   POST /api/query   — Primary Q&A endpoint for the accounting team chat interface
@@ -45,7 +45,7 @@ router = APIRouter()
         "Accepts a natural-language question about financial reporting standards "
         "and returns a grounded answer with citations to specific manual sections. "
         "Returns 503 if the knowledge base has not been indexed yet. "
-        "Returns 502 if the OpenAI LLM call fails."
+        "Returns 502 if the Gemini LLM call fails."
     ),
     tags=["Query"],
 )
@@ -72,7 +72,7 @@ async def query_manuals(request: QueryRequest) -> QueryResponse:
 
     Raises:
         HTTPException 503: Knowledge base is empty (ingestion not run yet).
-        HTTPException 502: OpenAI API call failed (rate limit, bad key, timeout).
+        HTTPException 502: Gemini API call failed (rate limit, bad key, timeout).
     """
     logger.info("Query received: %.80s…", request.question)
     response = await rag_pipeline.query_with_fallback(request.question)
@@ -221,7 +221,7 @@ async def get_stats() -> StatsResponse:
 # Run these from a terminal after starting the server with:
 #   uvicorn app.main:app --reload
 #
-# Test 1 — valid query (requires ingestion + OPENAI_API_KEY in .env)
+# Test 1 — valid query (requires ingestion + GOOGLE_API_KEY in .env)
 # curl -X POST http://localhost:8000/api/query \
 #   -H "Content-Type: application/json" \
 #   -d '{"question": "What are the revenue recognition criteria under ASC 606?"}'
