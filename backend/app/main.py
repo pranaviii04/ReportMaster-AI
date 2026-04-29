@@ -12,6 +12,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.routers.query import router as query_router
 from app.routers.upload import router as upload_router
+from app.routers.auth import router as auth_router
+from app.core.database import engine, Base
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────
@@ -85,6 +90,7 @@ app.add_middleware(
 
 app.include_router(query_router)
 app.include_router(upload_router)
+app.include_router(auth_router)
 
 
 # ── Root Route ────────────────────────────────────────────────────────────────

@@ -34,7 +34,13 @@ class Settings(BaseSettings):
     # ── CORS ─────────────────────────────────────────────────────────────────
     CORS_ORIGINS: list[str] = ["*"]
 
+    # ── JWT Authentication ───────────────────────────────────────────────────
+    SECRET_KEY: str = "reportmaster_super_secret_key_change_me_in_production"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440 # 24 hours
+
     model_config = SettingsConfigDict(
+
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,

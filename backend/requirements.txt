@@ -13,3 +13,6 @@ httpx
 tf-keras
 python-multipart
 pypdf
+bcrypt
+python-jose[cryptography]
+sqlalchemy

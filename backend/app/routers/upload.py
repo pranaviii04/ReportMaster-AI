@@ -6,16 +6,18 @@ Allows users to upload accounting manuals directly through the UI.
 import logging
 import shutil
 from pathlib import Path
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from app.core.config import settings
 from app.models.schemas import IngestResponse
+from app.routers.auth import get_current_user
+from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["ingestion"])
 
 @router.post("/upload", response_model=IngestResponse)
-async def upload_manual(file: UploadFile = File(...)):
+async def upload_manual(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
     """
     Upload a PDF file, save it to the manuals directory, and trigger re-indexing.
     """

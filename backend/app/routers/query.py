@@ -17,7 +17,7 @@ import logging
 import subprocess
 import sys
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
 from app.core.config import settings
 from app.models.schemas import (
@@ -28,6 +28,8 @@ from app.models.schemas import (
     StatsResponse,
 )
 from app.rag.pipeline import rag_pipeline
+from app.routers.auth import get_current_user
+from app.models.user import User
 
 logger = logging.getLogger("reportmaster.router")
 
@@ -49,7 +51,10 @@ router = APIRouter()
     ),
     tags=["Query"],
 )
-async def query_manuals(request: QueryRequest) -> QueryResponse:
+async def query_manuals(
+    request: QueryRequest, current_user: User = Depends(get_current_user)
+) -> QueryResponse:
+
     """
     Primary endpoint for the accounting team Q&A interface.
 
@@ -195,7 +200,8 @@ async def trigger_ingest(background_tasks: BackgroundTasks) -> IngestResponse:
     ),
     tags=["Operations"],
 )
-async def get_stats() -> StatsResponse:
+async def get_stats(current_user: User = Depends(get_current_user)) -> StatsResponse:
+
     """
     Return current statistics about the ChromaDB knowledge base.
 
