@@ -6,8 +6,20 @@ Loads all settings from the .env file using Pydantic v2 BaseSettings.
 import json
 from pathlib import Path
 
-from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _parse_cors_origins(value: object) -> list[str]:
+    """Parse *, a single origin, comma-separated origins, or a JSON array."""
+    if value is None or value == "":
+        return ["http://localhost:3000"]
+    if isinstance(value, list):
+        return [str(origin).strip() for origin in value if str(origin).strip()]
+    stripped = str(value).strip()
+    if stripped.startswith("["):
+        parsed = json.loads(stripped)
+        return [str(origin).strip() for origin in parsed if str(origin).strip()]
+    return [origin.strip() for origin in stripped.split(",") if origin.strip()]
 
 
 class Settings(BaseSettings):
@@ -40,32 +52,20 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./data/reportmaster.db"
 
     # ── CORS ─────────────────────────────────────────────────────────────────
-    # Host dashboards usually pass a string. Accept:
-    #   http://localhost:3000
-    #   https://app.vercel.app,https://app-git-main.vercel.app
-    #   ["https://app.vercel.app"]
-    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+    # Stored as a plain string so pydantic-settings does NOT JSON-decode it.
+    # (list[str] would crash on Railway values like * or http://localhost:3000.)
+    # Accept: *, http://localhost:3000, comma-separated URLs, or a JSON array.
+    CORS_ORIGINS: str = "http://localhost:3000"
 
     # ── JWT Authentication ───────────────────────────────────────────────────
     SECRET_KEY: str = "reportmaster_super_secret_key_change_me_in_production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
 
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, value: object) -> list[str]:
-        """Parse CORS origins from a list, JSON array, or comma-separated string."""
-        if value is None or value == "":
-            return ["http://localhost:3000"]
-        if isinstance(value, list):
-            return [str(origin).strip() for origin in value if str(origin).strip()]
-        if isinstance(value, str):
-            stripped = value.strip()
-            if stripped.startswith("["):
-                parsed = json.loads(stripped)
-                return [str(origin).strip() for origin in parsed if str(origin).strip()]
-            return [origin.strip() for origin in stripped.split(",") if origin.strip()]
-        return value
+    @property
+    def cors_origin_list(self) -> list[str]:
+        """Parse CORS_ORIGINS into a list for FastAPI CORSMiddleware."""
+        return _parse_cors_origins(self.CORS_ORIGINS)
 
     model_config = SettingsConfigDict(
         env_file=".env",
