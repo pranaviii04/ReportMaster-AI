@@ -9,7 +9,7 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.config import settings
+from app.core.config import get_cors_origin_list, settings
 from app.routers.query import router as query_router
 from app.routers.upload import router as upload_router
 from app.routers.auth import router as auth_router
@@ -77,7 +77,7 @@ app = FastAPI(
 
 # ── CORS Middleware ───────────────────────────────────────────────────────────
 
-_cors_origins = settings.cors_origin_list
+_cors_origins = get_cors_origin_list()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,

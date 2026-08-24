@@ -4,6 +4,7 @@ Loads all settings from the .env file using Pydantic v2 BaseSettings.
 """
 
 import json
+import os
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -20,6 +21,17 @@ def _parse_cors_origins(value: object) -> list[str]:
         parsed = json.loads(stripped)
         return [str(origin).strip() for origin in parsed if str(origin).strip()]
     return [origin.strip() for origin in stripped.split(",") if origin.strip()]
+
+
+def get_cors_origin_list() -> list[str]:
+    """
+    Read CORS_ORIGINS from the process environment, not from BaseSettings.
+
+    pydantic-settings JSON-decodes complex / list-like fields before validators
+    run. Railway values such as * or http://localhost:3000 are not JSON and
+    crash Settings() at import time, so this variable is kept off the model.
+    """
+    return _parse_cors_origins(os.getenv("CORS_ORIGINS", "http://localhost:3000"))
 
 
 class Settings(BaseSettings):
@@ -51,21 +63,10 @@ class Settings(BaseSettings):
     # DATABASE_URL=sqlite:////data/reportmaster.db
     DATABASE_URL: str = "sqlite:///./data/reportmaster.db"
 
-    # ── CORS ─────────────────────────────────────────────────────────────────
-    # Stored as a plain string so pydantic-settings does NOT JSON-decode it.
-    # (list[str] would crash on Railway values like * or http://localhost:3000.)
-    # Accept: *, http://localhost:3000, comma-separated URLs, or a JSON array.
-    CORS_ORIGINS: str = "http://localhost:3000"
-
     # ── JWT Authentication ───────────────────────────────────────────────────
     SECRET_KEY: str = "reportmaster_super_secret_key_change_me_in_production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
-
-    @property
-    def cors_origin_list(self) -> list[str]:
-        """Parse CORS_ORIGINS into a list for FastAPI CORSMiddleware."""
-        return _parse_cors_origins(self.CORS_ORIGINS)
 
     model_config = SettingsConfigDict(
         env_file=".env",
